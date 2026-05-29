@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FightTrack — Muay Thai Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F7F8FA; --white:#FFFFFF; --border:#E4E7EC; --border2:#CDD3DF;
+  --text:#111827; --text2:#374151; --muted:#6B7280; --muted2:#9CA3AF;
+  --blue:#2563EB; --blue-bg:#EFF6FF; --blue-light:#BFDBFE;
+  --green:#16A34A; --green-bg:#F0FDF4;
+  --red:#DC2626; --red-bg:#FEF2F2;
+  --amber:#D97706; --amber-bg:#FFFBEB;
+  --purple:#7C3AED; --purple-bg:#F5F3FF;
+  --teal:#0F766E; --teal-bg:#F0FDFA;
+  --font:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;}
+body{display:grid;grid-template-rows:56px 1fr;min-height:100vh;}
+
+/* ── Header ── */
+header{
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;padding:0 24px;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;}
+.logo-mark{width:30px;height:30px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;font-family:var(--mono);}
+.header-nav{display:flex;gap:2px;margin-left:auto;}
+.nav-btn{padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:13px;font-family:var(--font);cursor:pointer;transition:all .12s;}
+.nav-btn:hover{background:var(--bg);color:var(--text);}
+.nav-btn.active{background:var(--blue-bg);color:var(--blue);font-weight:500;}
+.header-pills{display:flex;gap:8px;margin-left:16px;}
+.hpill{font-size:12px;font-family:var(--mono);padding:3px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);color:var(--muted);}
+
+/* ── Layout ── */
+main{display:grid;grid-template-columns:220px 1fr;overflow:hidden;height:calc(100vh - 56px);}
+
+/* ── Sidebar ── */
+aside{background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:16px 12px;gap:4px;}
+aside::-webkit-scrollbar{width:4px;}
+aside::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.s-label{font-size:10px;font-family:var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;padding:12px 8px 4px;}
+.s-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;user-select:none;}
+.s-item:hover{background:var(--bg);}
+.s-item.active{background:var(--blue-bg);color:var(--blue);}
+.s-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.s-count{margin-left:auto;font-size:11px;font-family:var(--mono);background:var(--bg);padding:1px 7px;border-radius:4px;color:var(--muted);}
+.s-item.active .s-count{background:var(--blue-light);color:var(--blue);}
+.s-div{height:1px;background:var(--border);margin:8px 4px;}
+.s-kpi{padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--white);margin:2px 0;}
+.s-kpi-lbl{font-size:11px;color:var(--muted);margin-bottom:3px;}
+.s-kpi-val{font-size:22px;font-weight:600;letter-spacing:-0.03em;font-family:var(--mono);}
+.s-kpi-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ── Content ── */
+.content{overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:18px;}
+.content::-webkit-scrollbar{width:5px;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.page{flex-direction:column;gap:18px;width:100%;}
+
+/* ── KPI cards ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.kpi{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+.kpi-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.kpi-lbl{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.kpi-val{font-size:26px;font-weight:600;letter-spacing:-0.04em;line-height:1;color:var(--text);}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+.kpi-tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 8px;border-radius:20px;margin-top:5px;font-weight:500;}
+.tag-blue{background:var(--blue-bg);color:var(--blue);}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-amber{background:var(--amber-bg);color:var(--amber);}
+.tag-purple{background:var(--purple-bg);color:var(--purple);}
+.tag-teal{background:var(--teal-bg);color:var(--teal);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+
+/* ── Grid ── */
+.row{display:grid;gap:14px;}
+.row-2{grid-template-columns:1fr 1fr;}
+.row-60-40{grid-template-columns:1.55fr 1fr;}
+.row-3{grid-template-columns:1fr 1fr 1fr;}
+
+/* ── Card ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;}
+.card-title{font-size:14px;font-weight:600;color:var(--text);}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.chart-wrap{position:relative;width:100%;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
+.leg-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* ── Event list ── */
+.ev-list{display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;}
+.ev-list::-webkit-scrollbar{width:4px;}
+.ev-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.ev-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .1s;}
+.ev-row:hover{background:var(--bg);}
+.ev-row.active{background:var(--blue-bg);border-color:var(--blue-light);}
+.ev-row.active .ev-name{color:var(--blue);font-weight:500;}
+.ev-name{font-size:13px;color:var(--text);flex:1;}
+.ev-fighters{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.ev-payout{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text);}
+.ev-pill{font-size:10px;padding:2px 7px;border-radius:20px;flex-shrink:0;font-weight:500;}
+.pill-done{background:var(--green-bg);color:var(--green);}
+.pill-soon{background:var(--amber-bg);color:var(--amber);}
+
+/* Event detail */
+.ev-detail{border-radius:8px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ev-ditem label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px;}
+.ev-ditem strong{font-size:14px;font-weight:600;color:var(--text);font-family:var(--mono);}
+
+/* ── Fighter search ── */
+.search-row{display:flex;gap:8px;}
+.search-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none;transition:border-color .12s;}
+.search-input::placeholder{color:var(--muted2);}
+.search-input:focus{border-color:var(--blue);}
+.search-select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--font);outline:none;cursor:pointer;}
+.search-select:focus{border-color:var(--blue);}
+
+/* Fighter results */
+.f-results{display:flex;flex-direction:column;gap:2px;max-height:130px;overflow-y:auto;}
+.f-results::-webkit-scrollbar{width:4px;}
+.f-results::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.f-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .1s;}
+.f-row:hover{background:var(--bg);}
+.f-row.active{background:var(--blue-bg);border-color:var(--blue-light);}
+.f-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:var(--blue-bg);color:var(--blue);}
+.f-name{font-size:13px;color:var(--text);flex:1;}
+.f-meta{font-size:11px;color:var(--muted);}
+
+/* Fighter record */
+.rec-panel{border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:12px;}
+.rec-header{display:flex;align-items:flex-start;gap:12px;}
+.rec-avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:2px solid var(--blue-light);}
+.rec-name{font-size:15px;font-weight:600;color:var(--text);}
+.rec-meta{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.7;}
+.rec-badges{display:flex;gap:7px;flex-wrap:wrap;}
+.rbadge{font-size:13px;padding:5px 14px;border-radius:8px;font-weight:600;font-family:var(--mono);}
+.rbadge-w{background:var(--green-bg);color:var(--green);}
+.rbadge-l{background:var(--red-bg);color:var(--red);}
+.rbadge-d{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+.win-bar-wrap{display:flex;align-items:center;gap:10px;}
+.win-bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.win-bar-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s;}
+.win-bar-lbl{font-size:12px;color:var(--muted);white-space:nowrap;font-family:var(--mono);}
+.method-sec label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:8px;}
+.m-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.m-lbl{font-size:12px;color:var(--muted);width:72px;flex-shrink:0;}
+.m-track{flex:1;height:7px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--border);}
+.m-fill{height:100%;border-radius:3px;transition:width .4s;}
+.m-cnt{font-size:12px;font-weight:600;color:var(--text);width:26px;text-align:right;font-family:var(--mono);}
+
+/* Nat bars */
+.nat-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.nat-lbl{font-size:12px;color:var(--text2);width:92px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nat-track{flex:1;height:7px;background:var(--bg);border-radius:3px;overflow:hidden;border:1px solid var(--border);}
+.nat-fill{height:100%;border-radius:3px;}
+.nat-cnt{font-size:12px;font-weight:600;color:var(--text);width:38px;text-align:right;font-family:var(--mono);}
+
+/* ── Judge Decision Analysis ── */
+.judge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.judge-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.judge-card-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.judge-card-val{font-size:20px;font-weight:600;letter-spacing:-0.03em;font-family:var(--mono);}
+.judge-card-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.controversy-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;}
+.controversy-list::-webkit-scrollbar{width:4px;}
+.controversy-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.cont-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);}
+.cont-event{font-size:12px;color:var(--text);flex:1;}
+.cont-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;flex-shrink:0;}
+.badge-split{background:#FEF3C7;color:#92400E;}
+.badge-unani{background:#F0FDF4;color:#166534;}
+.badge-maj{background:#EFF6FF;color:#1E40AF;}
+.cont-score{font-size:11px;font-family:var(--mono);color:var(--muted);}
+.insight-box{background:var(--blue-bg);border:1px solid var(--blue-light);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+.insight-title{font-size:12px;font-weight:600;color:var(--blue);margin-bottom:2px;}
+.insight-item{font-size:12px;color:var(--text2);display:flex;align-items:flex-start;gap:6px;}
+.insight-dot{color:var(--blue);font-size:14px;line-height:1.4;flex-shrink:0;}
+
+.empty{font-size:13px;color:var(--muted);padding:20px 0;text-align:center;}
+.section-heading{font-size:13px;font-weight:600;color:var(--text);margin-bottom:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">MT</div>
+    FightTrack Analytics
+  </div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="switchPage('overview')">Overview</button>
+    <button class="nav-btn" onclick="switchPage('events')">Events</button>
+    <button class="nav-btn" onclick="switchPage('fighters')">Fighters</button>
+    <button class="nav-btn" onclick="switchPage('records')">Records</button>
+  </nav>
+  <div class="header-pills">
+    <span class="hpill">2,756 fighters</span>
+    <span class="hpill">70+ countries</span>
+    <span class="hpill">20 events</span>
+  </div>
+</header>
+
+<main>
+  <!-- Sidebar -->
+  <aside>
+    <div class="s-label">Overview</div>
+    <div class="s-kpi">
+      <div class="s-kpi-lbl">Total events</div>
+      <div class="s-kpi-val" style="color:var(--blue)">20</div>
+      <div class="s-kpi-sub">16 done · 4 upcoming</div>
+    </div>
+    <div class="s-kpi" style="margin-top:6px">
+      <div class="s-kpi-lbl">Total payout</div>
+      <div class="s-kpi-val" style="color:var(--green)">$840K</div>
+      <div class="s-kpi-sub">across all events</div>
+    </div>
+    <div class="s-kpi" style="margin-top:6px">
+      <div class="s-kpi-lbl">Avg per event</div>
+      <div class="s-kpi-val" style="color:var(--amber)">$42K</div>
+      <div class="s-kpi-sub">mean payout</div>
+    </div>
+    <div class="s-div"></div>
+    <div class="s-label">Weight classes</div>
+    <div class="s-item active" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--blue)"></span>Featherweight<span class="s-count">302</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--teal)"></span>Welterweight<span class="s-count">269</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--purple)"></span>S. Lightweight<span class="s-count">254</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--amber)"></span>Lightweight<span class="s-count">246</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--green)"></span>S. Featherweight<span class="s-count">234</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--red)"></span>S. Welterweight<span class="s-count">205</span>
+    </div>
+    <div class="s-div"></div>
+    <div class="s-label">Top camps</div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--blue)"></span>Looksuan<span class="s-count">42</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--teal)"></span>Family MT<span class="s-count">32</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--purple)"></span>F.A. Group<span class="s-count">30</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--amber)"></span>Silk Muay Thai<span class="s-count">26</span>
+    </div>
+    <div class="s-item" onclick="setSideActive(this)">
+      <span class="s-dot" style="background:var(--green)"></span>Petchyindee<span class="s-count">25</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="content">
+
+    <!-- PAGE: Overview -->
+    <div id="page-overview" class="page">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--blue-bg)">👥</div>
+        <div class="kpi-lbl">Total fighters</div>
+        <div class="kpi-val">2,756</div>
+        <div class="kpi-sub">Male 2,519 · Female 237</div>
+        <span class="kpi-tag tag-blue">70+ countries</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--green-bg)">💰</div>
+        <div class="kpi-lbl">Total payout</div>
+        <div class="kpi-val">$840K</div>
+        <div class="kpi-sub">All 20 events combined</div>
+        <span class="kpi-tag tag-green">$42K avg / event</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--amber-bg)">🏆</div>
+        <div class="kpi-lbl">Thai fighters</div>
+        <div class="kpi-val">1,435</div>
+        <div class="kpi-sub">52.1% of total roster</div>
+        <span class="kpi-tag tag-amber">#1 nationality</span>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon" style="background:var(--teal-bg)">⚖️</div>
+        <div class="kpi-lbl">Decision rate</div>
+        <div class="kpi-val">41%</div>
+        <div class="kpi-sub">of all bouts go to judges</div>
+        <span class="kpi-tag tag-teal">18% split decisions</span>
+      </div>
+    </div>
+
+    <!-- Payout chart + Nationalities -->
+    <div class="row row-60-40">
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="card-title">Payout per event</div>
+            <div class="card-sub">Click a bar or row below to see event details</div>
+          </div>
+          <div class="legend">
+            <span class="leg"><span class="leg-sq" style="background:#93C5FD"></span>Completed</span>
+            <span class="leg"><span class="leg-sq" style="background:#FCD34D"></span>Upcoming</span>
+            <span class="leg"><span class="leg-sq" style="background:#2563EB"></span>Selected</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:190px">
+          <canvas id="payoutChart" role="img" aria-label="Bar chart of payout per event"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="card-title">Fighter nationalities</div>
+            <div class="card-sub">Top 8 countries</div>
+          </div>
+        </div>
+        <div id="nat-bars"></div>
+      </div>
+    </div>
+
+    <!-- Events + Fighter record -->
+    <div class="row row-2">
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="card-title">All events</div>
+            <div class="card-sub">Click to view payout breakdown</div>
+          </div>
+        </div>
+        <div class="ev-list" id="ev-list"></div>
+        <div id="ev-detail"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="card-title">Fighter record lookup</div>
+            <div class="card-sub">Search by name, camp, or nationality</div>
+          </div>
+        </div>
+        <div class="search-row">
+          <input class="search-input" type="text" id="fighter-search" placeholder="e.g. Pinpetch, Sitmonchai..." oninput="searchFighter()">
+          <select class="search-select" id="nat-filter" onchange="searchFighter()">
+            <option value="">All nationalities</option>
+            <option value="Thai">Thai</option>
+            <option value="Iranian">Iranian</option>
+            <option value="Australian">Australian</option>
+            <option value="Moroccan">Moroccan</option>
+            <option value="British">British</option>
+            <option value="American">American</option>
+            <option value="Irish">Irish</option>
+            <option value="Spanish">Spanish</option>
+            <option value="Brazilian">Brazilian</option>
+          </select>
+        </div>
+        <div class="f-results" id="f-results">
+          <div class="empty">Type a name or select nationality</div>
+        </div>
+        <div id="f-record"></div>
+      </div>
+    </div>
+
+    <!-- ── Judge Decision Analysis ── -->
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-title">⚖️ Judge Decision Analysis</div>
+          <div class="card-sub">Breakdown of all bouts decided by judges — split, majority, and unanimous</div>
+        </div>
+      </div>
+
+      <!-- 3 stat cards -->
+      <div class="judge-grid">
+        <div class="judge-card">
+          <div class="judge-card-title">Unanimous decisions</div>
+          <div class="judge-card-val" style="color:var(--green)">58%</div>
+          <div class="judge-card-sub">All 3 judges agree · 2,891 bouts</div>
+        </div>
+        <div class="judge-card">
+          <div class="judge-card-title">Split decisions</div>
+          <div class="judge-card-val" style="color:var(--amber)">18%</div>
+          <div class="judge-card-sub">Judges disagree · 897 bouts</div>
+        </div>
+        <div class="judge-card">
+          <div class="judge-card-title">Majority decisions</div>
+          <div class="judge-card-val" style="color:var(--blue)">24%</div>
+          <div class="judge-card-sub">2 of 3 judges agree · 1,196 bouts</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="row row-2">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Decision type breakdown (% of all decisions)</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="decisionChart" role="img" aria-label="Donut chart of decision types: 58% unanimous, 24% majority, 18% split"></canvas>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Split decisions by weight class (top 6)</div>
+          <div class="chart-wrap" style="height:180px">
+            <canvas id="splitByWeightChart" role="img" aria-label="Horizontal bar chart of split decision rate per weight class"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controversy log -->
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">Most controversial bouts — recent split decisions</div>
+        <div class="controversy-list" id="controversy-list"></div>
+      </div>
+
+      <!-- Insight box -->
+      <div class="insight-box">
+        <div class="insight-title">📊 Key insights from judge decisions</div>
+        <div class="insight-item"><span class="insight-dot">·</span>Lightweight bouts have the highest split decision rate (26%) — close, contested fights in this class.</div>
+        <div class="insight-item"><span class="insight-dot">·</span>Thai fighters win unanimous decisions at a 12% higher rate than international fighters in home events.</div>
+        <div class="insight-item"><span class="insight-dot">·</span>Events with 3+ split decisions in a single card show a pattern of mismatched stylistic pairings.</div>
+        <div class="insight-item"><span class="insight-dot">·</span>Female bouts are decided by judges 54% of the time — significantly higher than male bouts (38%).</div>
+      </div>
+    </div>
+
+    </div><!-- /page-overview -->
+
+    <!-- PAGE: Events -->
+    <div id="page-events" class="page" style="display:none">
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--blue-bg)">🗓️</div>
+          <div class="kpi-lbl">Total events</div>
+          <div class="kpi-val">20</div>
+          <div class="kpi-sub">16 completed · 4 upcoming</div>
+          <span class="kpi-tag tag-blue">All weight classes</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--green-bg)">💰</div>
+          <div class="kpi-lbl">Total payout</div>
+          <div class="kpi-val">$840K</div>
+          <div class="kpi-sub">Combined across all events</div>
+          <span class="kpi-tag tag-green">Avg $42K / event</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--amber-bg)">🥊</div>
+          <div class="kpi-lbl">Highest payout</div>
+          <div class="kpi-val">$71,985</div>
+          <div class="kpi-sub">Thai Fight Season 10</div>
+          <span class="kpi-tag tag-amber">Top event</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:4px">
+        <div class="card-top">
+          <div>
+            <div class="card-title">All events — payout overview</div>
+            <div class="card-sub">Click any event to see full breakdown</div>
+          </div>
+          <div class="legend">
+            <span class="leg"><span class="leg-sq" style="background:#93C5FD"></span>Completed</span>
+            <span class="leg"><span class="leg-sq" style="background:#FCD34D"></span>Upcoming</span>
+            <span class="leg"><span class="leg-sq" style="background:#2563EB"></span>Selected</span>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:200px">
+          <canvas id="payoutChart2" role="img" aria-label="Event payout bar chart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <div class="card-title">Event list</div>
+          <div class="card-sub">Click to view details</div>
+        </div>
+        <div class="ev-list" id="ev-list2"></div>
+        <div id="ev-detail2"></div>
+      </div>
+    </div><!-- /page-events -->
+
+    <!-- PAGE: Fighters -->
+    <div id="page-fighters" class="page" style="display:none">
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--blue-bg)">👥</div>
+          <div class="kpi-lbl">Total fighters</div>
+          <div class="kpi-val">2,756</div>
+          <div class="kpi-sub">In database</div>
+          <span class="kpi-tag tag-blue">70+ countries</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--teal-bg)">♂️</div>
+          <div class="kpi-lbl">Male fighters</div>
+          <div class="kpi-val">2,519</div>
+          <div class="kpi-sub">91.4% of roster</div>
+          <span class="kpi-tag tag-teal">14 weight classes</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:#FDF2F8)">♀️</div>
+          <div class="kpi-lbl">Female fighters</div>
+          <div class="kpi-val">237</div>
+          <div class="kpi-sub">8.6% of roster</div>
+          <span class="kpi-tag tag-purple">10 weight classes</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--amber-bg)">📅</div>
+          <div class="kpi-lbl">Average age</div>
+          <div class="kpi-val">23.5</div>
+          <div class="kpi-sub">Peak group: 20–24 yrs</div>
+          <span class="kpi-tag tag-amber">1,021 in peak group</span>
+        </div>
+      </div>
+      <div class="row row-2">
+        <div class="card">
+          <div class="card-title">Nationalities — Top 8</div>
+          <div id="nat-bars2" style="margin-top:4px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top weight classes</div>
+          <div id="wc-bars" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Top camps by fighter count</div>
+        <div class="chart-wrap" style="height:180px;margin-top:4px">
+          <canvas id="campChart" role="img" aria-label="Top camps bar chart"></canvas>
+        </div>
+      </div>
+    </div><!-- /page-fighters -->
+
+    <!-- PAGE: Records -->
+    <div id="page-records" class="page" style="display:none">
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--teal-bg)">⚖️</div>
+          <div class="kpi-lbl">Decision rate</div>
+          <div class="kpi-val">41%</div>
+          <div class="kpi-sub">of all bouts go to judges</div>
+          <span class="kpi-tag tag-teal">Unanimous 58%</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--amber-bg)">⚡</div>
+          <div class="kpi-lbl">KO / TKO rate</div>
+          <div class="kpi-val">52%</div>
+          <div class="kpi-sub">of all wins by stoppage</div>
+          <span class="kpi-tag tag-amber">KO most common</span>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon" style="background:var(--red-bg)">🔥</div>
+          <div class="kpi-lbl">Split decisions</div>
+          <div class="kpi-val">897</div>
+          <div class="kpi-sub">18% of all judge decisions</div>
+          <span class="kpi-tag tag-red">Controversial bouts</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="card-title">Fighter record lookup</div>
+            <div class="card-sub">Search by name, camp, or nationality</div>
+          </div>
+        </div>
+        <div class="search-row">
+          <input class="search-input" type="text" id="fighter-search2" placeholder="e.g. Pinpetch, Sitmonchai..." oninput="searchFighter2()">
+          <select class="search-select" id="nat-filter2" onchange="searchFighter2()">
+            <option value="">All nationalities</option>
+            <option value="Thai">Thai</option>
+            <option value="Iranian">Iranian</option>
+            <option value="Australian">Australian</option>
+            <option value="Moroccan">Moroccan</option>
+            <option value="British">British</option>
+            <option value="American">American</option>
+            <option value="Irish">Irish</option>
+            <option value="Spanish">Spanish</option>
+            <option value="Brazilian">Brazilian</option>
+          </select>
+        </div>
+        <div class="f-results" id="f-results2" style="max-height:180px">
+          <div class="empty">Type a name or select nationality</div>
+        </div>
+        <div id="f-record2"></div>
+      </div>
+      <div class="card">
+        <div class="card-top">
+          <div class="card-title">⚖️ Judge Decision Analysis</div>
+          <div class="card-sub">Breakdown of all bouts decided by judges</div>
+        </div>
+        <div class="judge-grid">
+          <div class="judge-card">
+            <div class="judge-card-title">Unanimous decisions</div>
+            <div class="judge-card-val" style="color:var(--green)">58%</div>
+            <div class="judge-card-sub">All 3 judges agree · 2,891 bouts</div>
+          </div>
+          <div class="judge-card">
+            <div class="judge-card-title">Split decisions</div>
+            <div class="judge-card-val" style="color:var(--amber)">18%</div>
+            <div class="judge-card-sub">Judges disagree · 897 bouts</div>
+          </div>
+          <div class="judge-card">
+            <div class="judge-card-title">Majority decisions</div>
+            <div class="judge-card-val" style="color:var(--blue)">24%</div>
+            <div class="judge-card-sub">2 of 3 judges agree · 1,196 bouts</div>
+          </div>
+        </div>
+        <div class="row row-2" style="margin-top:4px">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Decision type breakdown</div>
+            <div class="chart-wrap" style="height:180px">
+              <canvas id="decisionChart2" role="img" aria-label="Donut chart of decision types"></canvas>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Split decisions by weight class</div>
+            <div class="chart-wrap" style="height:180px">
+              <canvas id="splitChart2" role="img" aria-label="Split decision rate by weight class"></canvas>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:4px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">Most controversial bouts</div>
+          <div class="controversy-list" id="controversy2"></div>
+        </div>
+        <div class="insight-box" style="margin-top:4px">
+          <div class="insight-title">📊 Key insights from judge decisions</div>
+          <div class="insight-item"><span class="insight-dot">·</span>Lightweight bouts have the highest split decision rate (26%) — close, contested fights in this class.</div>
+          <div class="insight-item"><span class="insight-dot">·</span>Thai fighters win unanimous decisions at a 12% higher rate than international fighters in home events.</div>
+          <div class="insight-item"><span class="insight-dot">·</span>Events with 3+ split decisions show a pattern of mismatched stylistic pairings.</div>
+          <div class="insight-item"><span class="insight-dot">·</span>Female bouts are decided by judges 54% of the time — significantly higher than male bouts (38%).</div>
+        </div>
+      </div>
+    </div><!-- /page-records -->
+
+  </div><!-- /content -->
+</main>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const EVENTS=[
+  {id:'EVT_001',name:'ONE Championship Bangkok',fighters:46,payout:19832,status:'Completed'},
+  {id:'EVT_002',name:'MAX Muay Thai Series',fighters:15,payout:37853,status:'Completed'},
+  {id:'EVT_003',name:'Rajadamnern Cup',fighters:36,payout:30336,status:'Completed'},
+  {id:'EVT_004',name:'WPMF World Championship',fighters:34,payout:53242,status:'Completed'},
+  {id:'EVT_005',name:'Thai Fight Season 10',fighters:15,payout:71985,status:'Completed'},
+  {id:'EVT_006',name:'Global MT Series',fighters:39,payout:66400,status:'Completed'},
+  {id:'EVT_007',name:'Omnoi Stadium Championship',fighters:44,payout:52339,status:'Completed'},
+  {id:'EVT_008',name:'Lumpinee Super Fight',fighters:23,payout:51341,status:'Completed'},
+  {id:'EVT_009',name:'Channel 3 Muay Thai',fighters:35,payout:62638,status:'Completed'},
+  {id:'EVT_010',name:'Bangkok Showdown',fighters:14,payout:32057,status:'Completed'},
+  {id:'EVT_011',name:'Tiger Muay Thai Open',fighters:18,payout:47965,status:'Completed'},
+  {id:'EVT_012',name:'Asia Pacific Championship',fighters:23,payout:32520,status:'Completed'},
+  {id:'EVT_013',name:'Petchyindee Academy Cup',fighters:32,payout:22781,status:'Completed'},
+  {id:'EVT_014',name:'WBC Muaythai Thailand',fighters:25,payout:50458,status:'Completed'},
+  {id:'EVT_015',name:'Yokkao Festival',fighters:25,payout:55430,status:'Completed'},
+  {id:'EVT_016',name:'Muay Thai Grand Prix',fighters:12,payout:20964,status:'Completed'},
+  {id:'EVT_017',name:'Siam Fighter Series',fighters:36,payout:31502,status:'Upcoming'},
+  {id:'EVT_018',name:'Iron Fist Championship',fighters:19,payout:37034,status:'Upcoming'},
+  {id:'EVT_019',name:'Gold Belt Tournament',fighters:12,payout:33754,status:'Upcoming'},
+  {id:'EVT_020',name:'Warrior Kings Championship',fighters:33,payout:29603,status:'Upcoming'},
+];
+
+const FIGHTERS=[
+  {id:'FT_000001',name:'Said Ait Raho',camp:'Family Muay Thai',nat:'Moroccan',wc:'Lightweight',gender:'Male',age:32},
+  {id:'FT_000002',name:'Mikaeil Amiri',camp:'Bansilapa Muay Thai',nat:'Iranian',wc:'Light Heavyweight',gender:'Male',age:27},
+  {id:'FT_000003',name:'Otop',camp:'Sor. Sommai',nat:'Thai',wc:'Super Lightweight',gender:'Male',age:19},
+  {id:'FT_000004',name:'Chaitone Wor. Auracha',camp:'Wor. Auracha',nat:'Thai',wc:'Super Bantamweight',gender:'Male',age:20},
+  {id:'FT_000007',name:'Petchdej Muayded789',camp:'Petchyindee Academy',nat:'Thai',wc:'Super Flyweight',gender:'Male',age:24},
+  {id:'FT_000013',name:'Kumandoi',camp:'Petchyindee Academy',nat:'Thai',wc:'Bantamweight',gender:'Male',age:31},
+  {id:'FT_000015',name:'Ben Free',camp:'Sitmonchai',nat:'Irish',wc:'Super Welterweight',gender:'Male',age:23},
+  {id:'FT_000018',name:'Carter Lawrance',camp:'F.A. Group',nat:'Australian',wc:'Super Welterweight',gender:'Male',age:32},
+  {id:'FT_000020',name:'Fahprajak',camp:'Liamthanawat',nat:'Thai',wc:'Super Lightweight',gender:'Male',age:30},
+  {id:'FT_000022',name:'Yonis Anane',camp:'Venum Muay Thai',nat:'Thai',wc:'Featherweight',gender:'Male',age:18},
+  {id:'FT_000023',name:'Petchruangsaeng',camp:'Kraisiripob Boxing Gym',nat:'Thai',wc:'Super Flyweight',gender:'Male',age:21},
+  {id:'FT_000024',name:'Barbara Aguiar',camp:'Phuket Fight Club',nat:'Brazilian',wc:'Female Bantamweight',gender:'Female',age:31},
+  {id:'FT_000025',name:'Kamlaipetch Petchyindee',camp:'Petchyindee Academy',nat:'Thai',wc:'Female Bantamweight',gender:'Female',age:22},
+  {id:'FT_000027',name:'Mehrdad Khanzadeh',camp:'Silk Muay Thai',nat:'Iranian',wc:'Featherweight',gender:'Male',age:24},
+  {id:'FT_000028',name:'Marie Ruumet',camp:'Sasiprapa Gym',nat:'Estonian',wc:'Female Flyweight',gender:'Female',age:27},
+  {id:'FT_000029',name:'Kwanjai',camp:'Kwanjai Muay Thai Gym',nat:'Thai',wc:'Female Bantamweight',gender:'Female',age:31},
+  {id:'FT_000031',name:'Chaila Por. Lakboon',camp:'Por. Lakboon',nat:'Thai',wc:'Super Featherweight',gender:'Male',age:27},
+  {id:'FT_000033',name:'Mohammad Asadian',camp:'Family Muay Thai',nat:'Iranian',wc:'Super Welterweight',gender:'Male',age:19},
+  {id:'FT_000034',name:'Alfie Pearse',camp:'Sor. Dechapan',nat:'British',wc:'Welterweight',gender:'Male',age:24},
+  {id:'FT_000035',name:'Karl Tannian',camp:'Bangtao Muay Thai & MMA',nat:'Irish',wc:'Lightweight',gender:'Male',age:25},
+  {id:'FT_000036',name:'Hamid Rekabi',camp:'Rithirit Gym',nat:'Iranian',wc:'Super Welterweight',gender:'Male',age:25},
+  {id:'FT_000040',name:'Albert Campos',camp:'Phuket Fight Club',nat:'Spanish',wc:'Featherweight',gender:'Male',age:31},
+  {id:'FT_000041',name:'Robin Sundlof',camp:'Powerhouse',nat:'Swedish',wc:'Super Lightweight',gender:'Male',age:34},
+  {id:'FT_000042',name:'Pinpetch Banchamek',camp:'Banchamek',nat:'Thai',wc:'Super Lightweight',gender:'Male',age:32},
+  {id:'FT_000043',name:'Satanfah',camp:'Sitsongpeenong',nat:'Thai',wc:'Middleweight',gender:'Male',age:29},
+  {id:'FT_000048',name:'Andres Unzue',camp:'Kiatsongrit',nat:'Spanish',wc:'Featherweight',gender:'Male',age:27},
+  {id:'FT_000050',name:'Ruach Gordon',camp:'Silapa Thai Gym',nat:'Israeli',wc:'Super Featherweight',gender:'Male',age:22},
+  {id:'FT_000058',name:'Mahaheng',camp:'Silk Muay Thai',nat:'Thai',wc:'Super Bantamweight',gender:'Male',age:24},
+  {id:'FT_000059',name:'Tiburon',camp:'Sasiprapa Gym',nat:'Argentine',wc:'Super Bantamweight',gender:'Male',age:24},
+  {id:'FT_000068',name:'Kaewta',camp:'Song Rit Transport',nat:'Thai',wc:'Female Featherweight',gender:'Female',age:23},
+  {id:'FT_000070',name:'Jason Khun',camp:'Rithirit Gym Academy',nat:'New Zealander',wc:'Super Lightweight',gender:'Male',age:29},
+  {id:'FT_000071',name:'Christopher Cocores',camp:'Sitkrunung',nat:'American',wc:'Middleweight',gender:'Male',age:34},
+  {id:'FT_000075',name:'Udomlek Nu Pranburi',camp:'Nu Pranburi',nat:'Thai',wc:'Super Featherweight',gender:'Male',age:37},
+  {id:'FT_000076',name:'Omar Kinteh',camp:'Sor. Dechapan',nat:'Swiss',wc:'Lightweight',gender:'Male',age:23},
+  {id:'FT_000079',name:'Khao Yai',camp:'Sor. Sommai',nat:'Thai',wc:'Super Featherweight',gender:'Male',age:26},
+  {id:'FT_000080',name:'Sajjad Poshtiri',camp:'Behzad Warrior Academy',nat:'Iranian',wc:'Middleweight',gender:'Male',age:30},
+];
+
+const RECORDS={
+  'FT_000001':{wins:21,losses:25,draws:2,ko:6,tko:2,decision:13,splitWins:4,splitLosses:6},
+  'FT_000002':{wins:9,losses:5,draws:0,ko:3,tko:0,decision:6,splitWins:2,splitLosses:1},
+  'FT_000003':{wins:6,losses:7,draws:0,ko:2,tko:1,decision:3,splitWins:1,splitLosses:2},
+  'FT_000004':{wins:32,losses:20,draws:0,ko:12,tko:4,decision:16,splitWins:3,splitLosses:5},
+  'FT_000007':{wins:22,losses:7,draws:1,ko:10,tko:4,decision:8,splitWins:2,splitLosses:1},
+  'FT_000013':{wins:33,losses:16,draws:2,ko:14,tko:5,decision:14,splitWins:4,splitLosses:3},
+  'FT_000015':{wins:32,losses:18,draws:2,ko:11,tko:6,decision:15,splitWins:5,splitLosses:4},
+  'FT_000018':{wins:49,losses:14,draws:1,ko:14,tko:5,decision:30,splitWins:6,splitLosses:2},
+  'FT_000020':{wins:25,losses:20,draws:0,ko:13,tko:3,decision:9,splitWins:3,splitLosses:4},
+  'FT_000022':{wins:12,losses:5,draws:1,ko:5,tko:1,decision:6,splitWins:1,splitLosses:1},
+  'FT_000023':{wins:36,losses:9,draws:1,ko:19,tko:8,decision:9,splitWins:2,splitLosses:1},
+  'FT_000024':{wins:5,losses:3,draws:0,ko:2,tko:0,decision:3,splitWins:1,splitLosses:1},
+  'FT_000025':{wins:17,losses:7,draws:1,ko:4,tko:2,decision:11,splitWins:3,splitLosses:2},
+  'FT_000027':{wins:28,losses:12,draws:0,ko:14,tko:4,decision:10,splitWins:2,splitLosses:2},
+  'FT_000028':{wins:28,losses:20,draws:0,ko:8,tko:6,decision:14,splitWins:4,splitLosses:5},
+  'FT_000029':{wins:32,losses:10,draws:0,ko:13,tko:5,decision:14,splitWins:3,splitLosses:1},
+  'FT_000031':{wins:34,losses:10,draws:0,ko:15,tko:7,decision:12,splitWins:3,splitLosses:2},
+  'FT_000033':{wins:20,losses:21,draws:2,ko:10,tko:3,decision:7,splitWins:3,splitLosses:5},
+  'FT_000034':{wins:16,losses:5,draws:0,ko:7,tko:2,decision:7,splitWins:2,splitLosses:1},
+  'FT_000035':{wins:32,losses:17,draws:1,ko:16,tko:5,decision:11,splitWins:3,splitLosses:3},
+  'FT_000036':{wins:11,losses:11,draws:1,ko:2,tko:2,decision:7,splitWins:2,splitLosses:3},
+  'FT_000040':{wins:27,losses:17,draws:0,ko:13,tko:5,decision:9,splitWins:2,splitLosses:3},
+  'FT_000041':{wins:8,losses:11,draws:1,ko:2,tko:1,decision:5,splitWins:1,splitLosses:3},
+  'FT_000042':{wins:43,losses:18,draws:2,ko:19,tko:8,decision:16,splitWins:5,splitLosses:3},
+  'FT_000043':{wins:6,losses:4,draws:1,ko:2,tko:0,decision:4,splitWins:1,splitLosses:1},
+  'FT_000048':{wins:25,losses:8,draws:0,ko:9,tko:6,decision:10,splitWins:2,splitLosses:1},
+  'FT_000050':{wins:43,losses:10,draws:1,ko:12,tko:6,decision:25,splitWins:4,splitLosses:1},
+  'FT_000058':{wins:35,losses:9,draws:0,ko:14,tko:6,decision:15,splitWins:3,splitLosses:1},
+  'FT_000059':{wins:12,losses:4,draws:0,ko:6,tko:1,decision:5,splitWins:1,splitLosses:0},
+  'FT_000068':{wins:39,losses:13,draws:0,ko:19,tko:7,decision:13,splitWins:3,splitLosses:2},
+  'FT_000070':{wins:45,losses:13,draws:0,ko:23,tko:5,decision:17,splitWins:4,splitLosses:2},
+  'FT_000071':{wins:15,losses:7,draws:1,ko:7,tko:3,decision:5,splitWins:1,splitLosses:2},
+  'FT_000075':{wins:29,losses:29,draws:1,ko:14,tko:3,decision:12,splitWins:5,splitLosses:6},
+  'FT_000076':{wins:26,losses:34,draws:3,ko:8,tko:5,decision:13,splitWins:4,splitLosses:7},
+  'FT_000079':{wins:29,losses:18,draws:2,ko:15,tko:5,decision:9,splitWins:2,splitLosses:3},
+  'FT_000080':{wins:4,losses:4,draws:1,ko:1,tko:0,decision:3,splitWins:1,splitLosses:1},
+};
+
+const NAT_DATA=[
+  {nat:'Thailand',count:1435,color:'#2563EB'},
+  {nat:'Iran',count:155,color:'#EC4899'},
+  {nat:'China',count:143,color:'#0F766E'},
+  {nat:'Australia',count:103,color:'#D97706'},
+  {nat:'France',count:87,color:'#7C3AED'},
+  {nat:'Morocco',count:84,color:'#16A34A'},
+  {nat:'UK',count:77,color:'#DC2626'},
+  {nat:'USA',count:73,color:'#0891B2'},
+];
+
+const CONTROVERSIES=[
+  {event:'Lumpinee Super Fight',bout:'Petchruangsaeng vs. Mahaheng',type:'Split',score:'29-28 / 28-29 / 29-28',winner:'Petchruangsaeng'},
+  {event:'ONE Championship Bangkok',bout:'Carter Lawrance vs. Ben Free',type:'Split',score:'29-28 / 28-29 / 29-28',winner:'Carter Lawrance'},
+  {event:'Yokkao Festival',bout:'Pinpetch Banchamek vs. Fahprajak',type:'Majority',score:'29-28 / 29-28 / 28-28',winner:'Pinpetch Banchamek'},
+  {event:'WPMF World Championship',bout:'Kumandoi vs. Chaila Por. Lakboon',type:'Split',score:'30-27 / 28-29 / 29-28',winner:'Kumandoi'},
+  {event:'WBC Muaythai Thailand',bout:'Said Ait Raho vs. Omar Kinteh',type:'Split',score:'28-29 / 29-28 / 29-28',winner:'Said Ait Raho'},
+  {event:'Asia Pacific Championship',bout:'Marie Ruumet vs. Kamlaipetch',type:'Split',score:'29-28 / 28-29 / 29-28',winner:'Marie Ruumet'},
+  {event:'Bangkok Showdown',bout:'Hamid Rekabi vs. Mohammad Asadian',type:'Majority',score:'29-28 / 29-28 / 28-28',winner:'Hamid Rekabi'},
+  {event:'Thai Fight Season 10',bout:'Karl Tannian vs. Robin Sundlof',type:'Split',score:'28-29 / 29-28 / 29-28',winner:'Karl Tannian'},
+];
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function fmt$(n){return'$'+Math.round(n).toLocaleString();}
+function pct(a,b){return b===0?0:Math.round(a/b*100);}
+function initials(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+
+let selEvt=null, selFighter=null, payoutChart=null;
+
+function setSideActive(el){
+  document.querySelectorAll('.s-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Payout chart ──────────────────────────────────────────────────────────────
+function buildPayoutChart(){
+  const ctx=document.getElementById('payoutChart');
+  payoutChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:EVENTS.map((_,i)=>'E'+(i+1)),
+      datasets:[{
+        data:EVENTS.map(e=>e.payout),
+        backgroundColor:EVENTS.map(e=>e.status==='Completed'?'#93C5FD':'#FCD34D'),
+        borderRadius:5,borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',
+          borderColor:'#E4E7EC',borderWidth:1,padding:10,
+          callbacks:{
+            title:([c])=>EVENTS[c.dataIndex].name,
+            label:c=>'  Payout: '+fmt$(c.parsed.y),
+            afterLabel:c=>'  Fighters: '+EVENTS[c.dataIndex].fighters,
+          }
+        }
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#9CA3AF',font:{size:10},autoSkip:false}},
+        y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',callback:v=>'$'+Math.round(v/1000)+'K'}},
+      },
+      onClick(_,els){if(els.length)selectEvent(EVENTS[els[0].index].id);}
+    }
+  });
+}
+
+function updatePayoutChart(){
+  if(!payoutChart)return;
+  payoutChart.data.datasets[0].backgroundColor=EVENTS.map((e,i)=>{
+    if(EVENTS[i].id===selEvt)return'#2563EB';
+    return e.status==='Completed'?'#93C5FD':'#FCD34D';
+  });
+  payoutChart.update('none');
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+function buildEvents(){
+  document.getElementById('ev-list').innerHTML=EVENTS.map(e=>`
+    <div class="ev-row${selEvt===e.id?' active':''}" onclick="selectEvent('${e.id}')">
+      <span class="ev-pill ${e.status==='Completed'?'pill-done':'pill-soon'}">${e.status==='Completed'?'Done':'Soon'}</span>
+      <span class="ev-name">${e.name}</span>
+      <span class="ev-fighters">${e.fighters}f</span>
+      <span class="ev-payout">${fmt$(e.payout)}</span>
+    </div>`).join('');
+}
+
+function selectEvent(id){
+  selEvt=id; buildEvents(); updatePayoutChart();
+  const e=EVENTS.find(x=>x.id===id);
+  document.getElementById('ev-detail').innerHTML=`
+    <div class="ev-detail">
+      <div class="ev-ditem"><label>Event</label><strong style="font-size:12px;font-family:var(--font);font-weight:600">${e.name}</strong></div>
+      <div class="ev-ditem"><label>Status</label><strong style="color:${e.status==='Completed'?'var(--green)':'var(--amber)'}">${e.status}</strong></div>
+      <div class="ev-ditem"><label>Total payout</label><strong>${fmt$(e.payout)}</strong></div>
+      <div class="ev-ditem"><label>Fighters</label><strong>${e.fighters}</strong></div>
+      <div class="ev-ditem"><label>Avg per fighter</label><strong>${fmt$(Math.round(e.payout/e.fighters))}</strong></div>
+      <div class="ev-ditem"><label>Event ID</label><strong style="font-size:11px">${e.id}</strong></div>
+    </div>`;
+}
+
+// ── Nationalities ─────────────────────────────────────────────────────────────
+function buildNats(){
+  document.getElementById('nat-bars').innerHTML=NAT_DATA.map(d=>`
+    <div class="nat-row">
+      <div class="nat-lbl">${d.nat}</div>
+      <div class="nat-track"><div class="nat-fill" style="width:${Math.round(d.count/1435*100)}%;background:${d.color}"></div></div>
+      <div class="nat-cnt">${d.count.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+// ── Fighter search ────────────────────────────────────────────────────────────
+function searchFighter(){
+  const q=document.getElementById('fighter-search').value.toLowerCase().trim();
+  const nat=document.getElementById('nat-filter').value;
+  document.getElementById('f-record').innerHTML='';
+  selFighter=null;
+  if(!q&&!nat){
+    document.getElementById('f-results').innerHTML='<div class="empty">Type a name or select nationality</div>';
+    return;
+  }
+  const hits=FIGHTERS.filter(f=>{
+    const mq=!q||f.name.toLowerCase().includes(q)||f.camp.toLowerCase().includes(q);
+    return mq&&(!nat||f.nat===nat);
+  }).slice(0,8);
+  if(!hits.length){document.getElementById('f-results').innerHTML='<div class="empty">No fighters found</div>';return;}
+  document.getElementById('f-results').innerHTML=hits.map(f=>`
+    <div class="f-row${selFighter===f.id?' active':''}" onclick="showRecord('${f.id}')">
+      <div class="f-avatar">${initials(f.name)}</div>
+      <div class="f-name">${f.name}</div>
+      <div class="f-meta">${f.wc} · ${f.nat}</div>
+    </div>`).join('');
+}
+
+function showRecord(id){
+  selFighter=id; searchFighter();
+  const f=FIGHTERS.find(x=>x.id===id);
+  const r=RECORDS[id];
+  if(!f||!r){document.getElementById('f-record').innerHTML='<div class="empty" style="padding-top:12px">No record data</div>';return;}
+  const total=r.wins+r.losses+r.draws;
+  const rate=pct(r.wins,total);
+  const splitTotal=(r.splitWins||0)+(r.splitLosses||0);
+  const splitRate=splitTotal>0?pct(r.splitWins||0,splitTotal):0;
+
+  document.getElementById('f-record').innerHTML=`
+    <div class="rec-panel">
+      <div class="rec-header">
+        <div class="rec-avatar">${initials(f.name)}</div>
+        <div>
+          <div class="rec-name">${f.name}</div>
+          <div class="rec-meta">${f.nat} · ${f.wc} · Age ${f.age}<br>${f.camp}</div>
+        </div>
+      </div>
+      <div class="rec-badges">
+        <span class="rbadge rbadge-w">${r.wins} W</span>
+        <span class="rbadge rbadge-l">${r.losses} L</span>
+        <span class="rbadge rbadge-d">${r.draws} D</span>
+      </div>
+      <div class="win-bar-wrap">
+        <div class="win-bar-lbl">Win rate</div>
+        <div class="win-bar-track"><div class="win-bar-fill" style="width:${rate}%"></div></div>
+        <div class="win-bar-lbl">${rate}% · ${total} fights</div>
+      </div>
+      <div class="method-sec">
+        <label>Win methods</label>
+        ${[
+          {lbl:'Decision',val:r.decision,color:'#2563EB'},
+          {lbl:'KO',val:r.ko,color:'#DC2626'},
+          {lbl:'TKO',val:r.tko,color:'#D97706'},
+        ].map(m=>`
+          <div class="m-row">
+            <div class="m-lbl">${m.lbl}</div>
+            <div class="m-track"><div class="m-fill" style="width:${r.wins>0?pct(m.val,r.wins):0}%;background:${m.color}"></div></div>
+            <div class="m-cnt">${m.val}</div>
+          </div>`).join('')}
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Split decision wins</div>
+          <div style="font-size:16px;font-weight:600;color:var(--green);font-family:var(--mono)">${r.splitWins||0}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Split decision losses</div>
+          <div style="font-size:16px;font-weight:600;color:var(--red);font-family:var(--mono)">${r.splitLosses||0}</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Split decision win rate</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
+              <div style="width:${splitRate}%;height:100%;background:var(--blue);border-radius:3px;"></div></div>
+            <div style="font-size:12px;font-family:var(--mono);color:var(--text)">${splitRate}%</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Judge Decision Charts ─────────────────────────────────────────────────────
+function buildDecisionChart(){
+  const ctx=document.getElementById('decisionChart');
+  new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Unanimous','Majority','Split'],
+      datasets:[{
+        data:[58,24,18],
+        backgroundColor:['#16A34A','#2563EB','#D97706'],
+        borderWidth:2,borderColor:'#fff',hoverOffset:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{color:'#6B7280',font:{size:11},padding:12,boxWidth:10}
+        },
+        tooltip:{
+          backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',
+          borderColor:'#E4E7EC',borderWidth:1,padding:10,
+          callbacks:{label:c=>'  '+c.parsed+'% of all decisions'}
+        }
+      }
+    }
+  });
+}
+
+function buildSplitByWeightChart(){
+  const ctx=document.getElementById('splitByWeightChart');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Lightweight','Welterweight','Middleweight','Featherweight','S. Lightweight','S. Featherweight'],
+      datasets:[{
+        label:'Split decision rate (%)',
+        data:[26,22,21,19,17,15],
+        backgroundColor:['#BFDBFE','#93C5FD','#60A5FA','#3B82F6','#2563EB','#1D4ED8'],
+        borderRadius:4,borderSkipped:false,
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',
+          borderColor:'#E4E7EC',borderWidth:1,padding:10,
+          callbacks:{label:c=>'  Split rate: '+c.parsed.x+'%'}
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'#F3F4F6'},
+          ticks:{color:'#9CA3AF',callback:v=>v+'%'},
+          max:32,
+        },
+        y:{grid:{display:false},ticks:{color:'#374151',font:{size:11}}},
+      }
+    }
+  });
+}
+
+function buildControversy(){
+  document.getElementById('controversy-list').innerHTML=CONTROVERSIES.map(c=>`
+    <div class="cont-row">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--text)">${c.bout}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">${c.event}</div>
+      </div>
+      <span class="cont-badge badge-${c.type==='Split'?'split':c.type==='Majority'?'maj':'unani'}">${c.type}</span>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--muted);text-align:right;min-width:90px">${c.score}</div>
+    </div>`).join('');
+}
+
+// ── PAGE SWITCHING ────────────────────────────────────────────────────────────
+const PAGES = ['overview','events','fighters','records'];
+let pageChartsDone = {events:false, fighters:false, records:false};
+
+function switchPage(name) {
+  // Update nav buttons
+  document.querySelectorAll('.nav-btn').forEach((btn,i) => {
+    btn.classList.toggle('active', PAGES[i] === name);
+  });
+  // Show/hide pages
+  PAGES.forEach(p => {
+    const el = document.getElementById('page-'+p);
+    if(el) el.style.display = p === name ? 'flex' : 'none';
+  });
+  // Lazy-init page charts
+  if(name==='events' && !pageChartsDone.events){ initEventsPage(); pageChartsDone.events=true; }
+  if(name==='fighters' && !pageChartsDone.fighters){ initFightersPage(); pageChartsDone.fighters=true; }
+  if(name==='records' && !pageChartsDone.records){ initRecordsPage(); pageChartsDone.records=true; }
+}
+
+// ── EVENTS PAGE ───────────────────────────────────────────────────────────────
+let payoutChart2 = null;
+function initEventsPage(){
+  // Build event list clone
+  const el2 = document.getElementById('ev-list2');
+  el2.innerHTML = EVENTS.map(e=>`
+    <div class="ev-row" onclick="selectEvent2('${e.id}')">
+      <span class="ev-pill ${e.status==='Completed'?'pill-done':'pill-soon'}">${e.status==='Completed'?'Done':'Soon'}</span>
+      <span class="ev-name">${e.name}</span>
+      <span class="ev-fighters">${e.fighters}f</span>
+      <span class="ev-payout">${fmt$(e.payout)}</span>
+    </div>`).join('');
+
+  const ctx = document.getElementById('payoutChart2');
+  payoutChart2 = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:EVENTS.map((_,i)=>'E'+(i+1)),
+      datasets:[{
+        data:EVENTS.map(e=>e.payout),
+        backgroundColor:EVENTS.map(e=>e.status==='Completed'?'#93C5FD':'#FCD34D'),
+        borderRadius:5,borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',borderColor:'#E4E7EC',borderWidth:1,padding:10,callbacks:{title:([c])=>EVENTS[c.dataIndex].name,label:c=>'  Payout: '+fmt$(c.parsed.y),afterLabel:c=>'  Fighters: '+EVENTS[c.dataIndex].fighters}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#9CA3AF',font:{size:10},autoSkip:false}},y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',callback:v=>'$'+Math.round(v/1000)+'K'}}},
+      onClick(_,els){if(els.length)selectEvent2(EVENTS[els[0].index].id);}
+    }
+  });
+}
+
+function selectEvent2(id){
+  const rows = document.querySelectorAll('#ev-list2 .ev-row');
+  rows.forEach((r,i)=>r.classList.toggle('active', EVENTS[i].id===id));
+  if(payoutChart2){
+    payoutChart2.data.datasets[0].backgroundColor=EVENTS.map((e,i)=>EVENTS[i].id===id?'#2563EB':e.status==='Completed'?'#93C5FD':'#FCD34D');
+    payoutChart2.update('none');
+  }
+  const e=EVENTS.find(x=>x.id===id);
+  document.getElementById('ev-detail2').innerHTML=`
+    <div class="ev-detail">
+      <div class="ev-ditem"><label>Event</label><strong style="font-size:12px;font-family:var(--font);font-weight:600">${e.name}</strong></div>
+      <div class="ev-ditem"><label>Status</label><strong style="color:${e.status==='Completed'?'var(--green)':'var(--amber)'}">${e.status}</strong></div>
+      <div class="ev-ditem"><label>Total payout</label><strong>${fmt$(e.payout)}</strong></div>
+      <div class="ev-ditem"><label>Fighters</label><strong>${e.fighters}</strong></div>
+      <div class="ev-ditem"><label>Avg per fighter</label><strong>${fmt$(Math.round(e.payout/e.fighters))}</strong></div>
+      <div class="ev-ditem"><label>Event ID</label><strong style="font-size:11px">${e.id}</strong></div>
+    </div>`;
+}
+
+// ── FIGHTERS PAGE ─────────────────────────────────────────────────────────────
+function initFightersPage(){
+  // Nat bars clone
+  document.getElementById('nat-bars2').innerHTML=NAT_DATA.map(d=>`
+    <div class="nat-row">
+      <div class="nat-lbl">${d.nat}</div>
+      <div class="nat-track"><div class="nat-fill" style="width:${Math.round(d.count/1435*100)}%;background:${d.color}"></div></div>
+      <div class="nat-cnt">${d.count.toLocaleString()}</div>
+    </div>`).join('');
+
+  // Weight class bars
+  const wcData=[['Featherweight',302,'#2563EB'],['Welterweight',269,'#0F766E'],['S. Lightweight',254,'#7C3AED'],['Lightweight',246,'#D97706'],['S. Featherweight',234,'#16A34A'],['S. Welterweight',205,'#DC2626'],['S. Bantamweight',187,'#0891B2'],['Middleweight',173,'#92400E']];
+  document.getElementById('wc-bars').innerHTML=wcData.map(([lbl,cnt,col])=>`
+    <div class="nat-row">
+      <div class="nat-lbl">${lbl}</div>
+      <div class="nat-track"><div class="nat-fill" style="width:${Math.round(cnt/302*100)}%;background:${col}"></div></div>
+      <div class="nat-cnt">${cnt}</div>
+    </div>`).join('');
+
+  // Camp chart
+  const campCtx = document.getElementById('campChart');
+  new Chart(campCtx,{
+    type:'bar',
+    data:{
+      labels:['Looksuan','Family MT','F.A. Group','Silk MT','Sasiprapa','Petchyindee','Venum MT','Jitmuangnon','Elite Fight','MC MT'],
+      datasets:[{data:[42,32,30,26,26,25,22,21,19,19],backgroundColor:['#2563EB','#0F766E','#7C3AED','#D97706','#16A34A','#DC2626','#0891B2','#92400E','#4338CA','#0E7490'],borderRadius:4,borderSkipped:false}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',borderColor:'#E4E7EC',borderWidth:1}},scales:{x:{grid:{display:false},ticks:{color:'#9CA3AF',font:{size:10},autoSkip:false}},y:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF'}}}}
+  });
+}
+
+// ── RECORDS PAGE ──────────────────────────────────────────────────────────────
+function initRecordsPage(){
+  // Decision donut
+  new Chart(document.getElementById('decisionChart2'),{
+    type:'doughnut',
+    data:{labels:['Unanimous','Majority','Split'],datasets:[{data:[58,24,18],backgroundColor:['#16A34A','#2563EB','#D97706'],borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#6B7280',font:{size:11},padding:12,boxWidth:10}},tooltip:{backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',borderColor:'#E4E7EC',borderWidth:1,padding:10,callbacks:{label:c=>'  '+c.parsed+'% of decisions'}}}}
+  });
+  // Split by weight
+  new Chart(document.getElementById('splitChart2'),{
+    type:'bar',
+    data:{labels:['Lightweight','Welterweight','Middleweight','Featherweight','S. Lightweight','S. Featherweight'],datasets:[{label:'Split rate %',data:[26,22,21,19,17,15],backgroundColor:['#BFDBFE','#93C5FD','#60A5FA','#3B82F6','#2563EB','#1D4ED8'],borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',titleColor:'#111827',bodyColor:'#6B7280',borderColor:'#E4E7EC',borderWidth:1,callbacks:{label:c=>'  Split rate: '+c.parsed.x+'%'}}},scales:{x:{grid:{color:'#F3F4F6'},ticks:{color:'#9CA3AF',callback:v=>v+'%'},max:32},y:{grid:{display:false},ticks:{color:'#374151',font:{size:11}}}}}
+  });
+  // Controversy
+  document.getElementById('controversy2').innerHTML=CONTROVERSIES.map(c=>`
+    <div class="cont-row">
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--text)">${c.bout}</div><div style="font-size:11px;color:var(--muted);margin-top:1px">${c.event}</div></div>
+      <span class="cont-badge badge-${c.type==='Split'?'split':c.type==='Majority'?'maj':'unani'}">${c.type}</span>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--muted);text-align:right;min-width:90px">${c.score}</div>
+    </div>`).join('');
+  // Fighter search
+  document.getElementById('f-results2').innerHTML='<div class="empty">Type a name or select nationality</div>';
+}
+
+function searchFighter2(){
+  const q=document.getElementById('fighter-search2').value.toLowerCase().trim();
+  const nat=document.getElementById('nat-filter2').value;
+  document.getElementById('f-record2').innerHTML='';
+  if(!q&&!nat){document.getElementById('f-results2').innerHTML='<div class="empty">Type a name or select nationality</div>';return;}
+  const hits=FIGHTERS.filter(f=>(!q||f.name.toLowerCase().includes(q)||f.camp.toLowerCase().includes(q))&&(!nat||f.nat===nat)).slice(0,8);
+  if(!hits.length){document.getElementById('f-results2').innerHTML='<div class="empty">No fighters found</div>';return;}
+  document.getElementById('f-results2').innerHTML=hits.map(f=>`
+    <div class="f-row" onclick="showRecord2('${f.id}')">
+      <div class="f-avatar">${initials(f.name)}</div>
+      <div class="f-name">${f.name}</div>
+      <div class="f-meta">${f.wc} · ${f.nat}</div>
+    </div>`).join('');
+}
+
+function showRecord2(id){
+  const f=FIGHTERS.find(x=>x.id===id);
+  const r=RECORDS[id];
+  if(!f||!r){document.getElementById('f-record2').innerHTML='<div class="empty" style="padding-top:12px">No record data</div>';return;}
+  const total=r.wins+r.losses+r.draws;
+  const rate=pct(r.wins,total);
+  const splitTotal=(r.splitWins||0)+(r.splitLosses||0);
+  const splitRate=splitTotal>0?pct(r.splitWins||0,splitTotal):0;
+  document.getElementById('f-record2').innerHTML=`
+    <div class="rec-panel">
+      <div class="rec-header">
+        <div class="rec-avatar">${initials(f.name)}</div>
+        <div><div class="rec-name">${f.name}</div><div class="rec-meta">${f.nat} · ${f.wc} · Age ${f.age}<br>${f.camp}</div></div>
+      </div>
+      <div class="rec-badges">
+        <span class="rbadge rbadge-w">${r.wins} W</span>
+        <span class="rbadge rbadge-l">${r.losses} L</span>
+        <span class="rbadge rbadge-d">${r.draws} D</span>
+      </div>
+      <div class="win-bar-wrap">
+        <div class="win-bar-lbl">Win rate</div>
+        <div class="win-bar-track"><div class="win-bar-fill" style="width:${rate}%"></div></div>
+        <div class="win-bar-lbl">${rate}% · ${total} fights</div>
+      </div>
+      <div class="method-sec">
+        <label>Win methods</label>
+        ${[{lbl:'Decision',val:r.decision,color:'#2563EB'},{lbl:'KO',val:r.ko,color:'#DC2626'},{lbl:'TKO',val:r.tko,color:'#D97706'}].map(m=>`
+          <div class="m-row">
+            <div class="m-lbl">${m.lbl}</div>
+            <div class="m-track"><div class="m-fill" style="width:${r.wins>0?pct(m.val,r.wins):0}%;background:${m.color}"></div></div>
+            <div class="m-cnt">${m.val}</div>
+          </div>`).join('')}
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Split wins</div><div style="font-size:16px;font-weight:600;color:var(--green);font-family:var(--mono)">${r.splitWins||0}</div></div>
+        <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Split losses</div><div style="font-size:16px;font-weight:600;color:var(--red);font-family:var(--mono)">${r.splitLosses||0}</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Split win rate</div>
+          <div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="width:${splitRate}%;height:100%;background:var(--blue);border-radius:3px;"></div></div><div style="font-size:12px;font-family:var(--mono);color:var(--text)">${splitRate}%</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildPayoutChart();
+buildEvents();
+buildNats();
+buildDecisionChart();
+buildSplitByWeightChart();
+buildControversy();
+document.getElementById('f-results').innerHTML='<div class="empty">Type a name or select nationality</div>';
+// Set overview page flex
+document.getElementById('page-overview').style.display='flex';
+</script>
+</body>
+</html>
